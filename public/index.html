@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>MC Panel</title><link rel="stylesheet" href="/style.css">
+<header><h1>☠ Minecraft Panel</h1><form method="post" action="/logout"><button>Logout</button></form></header>
+<main><div class="card"><h2>Server Limit</h2><p><b>1 / 1</b> server</p><p class="muted">The server uses resources available to this Railway service.</p><button id="create" onclick="createServer()">＋ Create Minecraft Server</button></div>
+<div class="card"><h2>Your Server</h2><div id="server">Loading...</div></div></main>
+<script>
+async function load(){let r=await fetch('/api/server');let x=await r.json();let el=document.getElementById('server');if(!x.server){el.innerHTML='<p>No server created.</p>';create.disabled=false;return}create.disabled=true;el.innerHTML='<div class="server"><b>'+x.server.name+'</b><span>'+x.server.software+' '+x.server.version+'</span><strong>OFFLINE</strong></div><p>Start/Stop, console, files, worlds, plugins and software management can be attached to this server.</p>'}
+async function createServer(){let name=prompt('Server name?');if(!name)return;let r=await fetch('/api/server',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,software:'Paper',version:'1.21.x'})});let x=await r.json();if(!r.ok)return alert(x.error);load()}load();
+</script>
