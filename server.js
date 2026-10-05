@@ -1,0 +1,21 @@
+const express=require('express'),session=require('express-session'),path=require('path');
+const app=express(),PORT=process.env.PORT||3000;
+const USER=process.env.ADMIN_USERNAME||'admin',PASS=process.env.ADMIN_PASSWORD||'change-me';
+let server=null;
+app.use(express.urlencoded({extended:true}));app.use(express.json());
+app.use(session({secret:process.env.SESSION_SECRET||'change-this-secret',resave:false,saveUninitialized:false,cookie:{httpOnly:true,sameSite:'lax'}}));
+app.use(express.static(path.join(__dirname,'public')));
+const auth=(q,s,n)=>q.session.authenticated?n():s.redirect('/login');
+app.get('/login',(q,s)=>s.sendFile(path.join(__dirname,'public/login.html')));
+app.post('/login',(q,s)=>{if(q.body.username===USER&&q.body.password===PASS){q.session.authenticated=true;return s.redirect('/')}s.status(401).send('Invalid login. <a href="/login">Back</a>')});
+app.post('/logout',(q,s)=>q.session.destroy(()=>s.redirect('/login')));
+app.get('/',auth,(q,s)=>s.sendFile(path.join(__dirname,'public/index.html')));
+app.get('/api/server',auth,(q,s)=>s.json({limit:1,server}));
+app.post('/api/server',auth,(q,s)=>{
+ if(server)return s.status(409).json({error:'Server limit reached. Only 1 server is allowed.'});
+ const name=String(q.body.name||'').trim(); if(!name)return s.status(400).json({error:'Server name required'});
+ server={id:Date.now().toString(),name,status:'offline',software:q.body.software||'Paper',version:q.body.version||'1.21.x'};
+ s.json({ok:true,server});
+});
+app.delete('/api/server',auth,(q,s)=>{server=null;s.json({ok:true})});
+app.listen(PORT,'0.0.0.0',()=>console.log('Panel listening on '+PORT));
